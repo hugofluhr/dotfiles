@@ -14,11 +14,28 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
   RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 fi
 
+# --- zsh-autosuggestions (always) ---
+ZSH_AUTOSUGGEST_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
+if [ ! -d "$ZSH_AUTOSUGGEST_DIR" ]; then
+  echo "Installing zsh-autosuggestions..."
+  git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$ZSH_AUTOSUGGEST_DIR"
+fi
+
 # --- zsh-syntax-highlighting (always) ---
 ZSH_HIGHLIGHT_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
 if [ ! -d "$ZSH_HIGHLIGHT_DIR" ]; then
   echo "Installing zsh-syntax-highlighting..."
   git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_HIGHLIGHT_DIR"
+fi
+
+# --- zoxide (always) ---
+if ! command -v zoxide &>/dev/null; then
+  echo "Installing zoxide..."
+  if command -v brew &>/dev/null; then
+    brew install zoxide
+  else
+    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+  fi
 fi
 
 if [ "$MINIMAL" = false ]; then
@@ -42,6 +59,7 @@ fi
 
 # --- symlinks ---
 DOTFILES=(
+  .zsh
   .zshrc
   .zprofile
   .bash_profile
