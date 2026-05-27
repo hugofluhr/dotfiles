@@ -34,7 +34,7 @@ done
 
 if [ "$SHELL" = "$(which zsh)" ]; then
   echo "Reverting default shell to bash..."
-  chsh -s "$(which bash)"
+  sudo chsh -s "$(which bash)" "$USER"
 fi
 
 echo "Done. Log out and back in for shell change to take effect."

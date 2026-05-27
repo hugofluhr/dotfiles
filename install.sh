@@ -94,7 +94,7 @@ done
 
 if [ "$SHELL" != "$(which zsh)" ]; then
   echo "Setting zsh as default shell..."
-  chsh -s "$(which zsh)"
+  sudo chsh -s "$(which zsh)" "$USER"
 fi
 
 echo "Done. Log out and back in for zsh to take effect."
