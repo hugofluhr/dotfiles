@@ -1,0 +1,24 @@
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[user]
+	name = hugofluhr
+	email = hugo.fluhr@gmail.com
+	signingkey = 618ABB5EEDBD2CA3
+[core]
+	editor = vim
+	pager = less -FX
+[init]
+	defaultBranch = main
+[alias]
+	glog = log --oneline --graph
+[fetch]
+	prune = false
+[commit]
+	gpgsign = false
+[ssh]
+	postBuffer = 524288000
+[url "git@github.com:"]
+	insteadOf = https://github.com/
