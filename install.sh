@@ -8,6 +8,12 @@ for arg in "$@"; do
   [[ "$arg" == "--minimal" ]] && MINIMAL=true
 done
 
+# --- zsh (Linux only) ---
+if ! command -v zsh &>/dev/null; then
+  echo "Installing zsh..."
+  sudo apt-get install -y zsh
+fi
+
 # --- oh-my-zsh (always) ---
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
   echo "Installing oh-my-zsh..."
