@@ -81,12 +81,14 @@ for file in "${DOTFILES[@]}"; do
   target="$HOME/$file"
   source="$DOTFILES_DIR/$file"
 
-  if [ -e "$target" ] && [ ! -L "$target" ]; then
+  if [ -L "$target" ]; then
+    rm "$target"
+  elif [ -e "$target" ]; then
     echo "  Backing up existing $file -> ${file}.bak"
     mv "$target" "${target}.bak"
   fi
 
-  ln -sf "$source" "$target"
+  ln -s "$source" "$target"
   echo "  $target -> $source"
 done
 
