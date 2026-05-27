@@ -7,6 +7,7 @@ Personal dotfiles for macOS, with portable support for Linux VMs.
 | File | Purpose |
 |---|---|
 | `.zshrc` | Zsh config: oh-my-zsh, plugins, conda init |
+| `.zsh/aliases.zsh` | Shell aliases (sourced by `.zshrc`) |
 | `.zprofile` | Login shell: Homebrew path setup (macOS only, guarded) |
 | `.bash_profile` | Bash login shell: conda init |
 | `.gitconfig` | Git: user, editor, aliases, LFS |
@@ -19,7 +20,9 @@ Personal dotfiles for macOS, with portable support for Linux VMs.
 
 - **[oh-my-zsh](https://ohmyzsh.sh)** — plugin and theme framework
 - **[Powerlevel10k](https://github.com/romkatv/powerlevel10k)** — prompt theme (requires a [Nerd Font](https://www.nerdfonts.com))
+- **[zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)** — inline history suggestions as you type
 - **[zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)** — fish-like command highlighting
+- **[zoxide](https://github.com/ajeetdsouza/zoxide)** — smarter `cd`; use `z <dir>` to jump based on frecency
 - **[git-open](https://github.com/paulirish/git-open)** — open the current repo in the browser
 
 ### Tmux
@@ -38,8 +41,9 @@ cd ~/dotfiles
 
 This will:
 1. Install oh-my-zsh (if not already present)
-2. Clone zsh-syntax-highlighting, Powerlevel10k, and git-open into oh-my-zsh custom directories
-3. Symlink all dotfiles into `~\/` (existing files are backed up with a `.bak` extension)
+2. Clone zsh-autosuggestions, zsh-syntax-highlighting, Powerlevel10k, and git-open into oh-my-zsh custom directories
+3. Install zoxide (via Homebrew on macOS, curl installer on Linux)
+4. Symlink all dotfiles into `~/` (existing files are backed up with a `.bak` extension)
 
 ### Minimal install (for temporary VMs)
 
@@ -47,7 +51,7 @@ This will:
 ./install.sh --minimal
 ```
 
-Skips Powerlevel10k and git-open. oh-my-zsh and zsh-syntax-highlighting are still installed. The prompt falls back to the oh-my-zsh default theme.
+Skips Powerlevel10k and git-open. oh-my-zsh, zsh-autosuggestions, zsh-syntax-highlighting, and zoxide are still installed. The prompt falls back to the oh-my-zsh default theme.
 
 ## Notes
 
