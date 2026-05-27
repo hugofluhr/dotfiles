@@ -90,4 +90,9 @@ for file in "${DOTFILES[@]}"; do
   echo "  $target -> $source"
 done
 
-echo "Done."
+if [ "$SHELL" != "$(which zsh)" ]; then
+  echo "Setting zsh as default shell..."
+  chsh -s "$(which zsh)"
+fi
+
+echo "Done. Log out and back in for zsh to take effect."
