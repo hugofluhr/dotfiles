@@ -53,6 +53,14 @@ This will:
 
 Skips Powerlevel10k and git-open. oh-my-zsh, zsh-autosuggestions, zsh-syntax-highlighting, and zoxide are still installed. The prompt falls back to the oh-my-zsh default theme.
 
+### Uninstall
+
+```sh
+~/dotfiles/uninstall.sh
+```
+
+Removes all symlinks, restores any `.bak` files, and reverts the default shell to bash.
+
 ## Notes
 
 - **Conda paths** in `.zshrc` and `.bash_profile` assume miniforge3 at `$HOME/miniforge3`. On machines without conda, the init block fails silently.
