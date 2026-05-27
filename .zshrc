@@ -99,6 +99,7 @@ source $ZSH/oh-my-zsh.sh
 # export ARCHFLAGS="-arch x86_64"
 
 [[ -f ~/.zsh/aliases.zsh ]] && source ~/.zsh/aliases.zsh
+[[ -f /etc/profile.d/z00-lmod.sh ]] && source /etc/profile.d/z00-lmod.sh
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
