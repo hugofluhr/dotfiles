@@ -34,6 +34,25 @@ if [ ! -d "$ZSH_HIGHLIGHT_DIR" ]; then
   git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_HIGHLIGHT_DIR"
 fi
 
+# --- fzf (always, required by fzf-tab) ---
+if ! command -v fzf &>/dev/null; then
+  echo "Installing fzf..."
+  if command -v brew &>/dev/null; then
+    brew install fzf
+  elif command -v apt-get &>/dev/null; then
+    sudo apt-get install -y fzf
+  else
+    echo "  fzf not found and no supported package manager available. Install fzf manually: https://github.com/junegunn/fzf"
+  fi
+fi
+
+# --- fzf-tab (always) ---
+FZF_TAB_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fzf-tab"
+if [ ! -d "$FZF_TAB_DIR" ]; then
+  echo "Installing fzf-tab..."
+  git clone --depth=1 https://github.com/Aloxaf/fzf-tab.git "$FZF_TAB_DIR"
+fi
+
 # --- zoxide (always) ---
 if ! command -v zoxide &>/dev/null; then
   echo "Installing zoxide..."
