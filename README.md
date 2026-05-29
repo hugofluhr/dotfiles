@@ -61,6 +61,17 @@ Skips Powerlevel10k and git-open. oh-my-zsh, zsh-autosuggestions, zsh-syntax-hig
 
 Removes all symlinks, restores any `.bak` files, and reverts the default shell to bash.
 
+## Machine-specific secrets
+
+If `~/.secrets/env.sh` exists it will be sourced automatically by `.zshrc`. Use it for tokens, API keys, or any env vars that shouldn't be in the repo:
+
+```sh
+export GITHUB_TOKEN=...
+export SOME_API_KEY=...
+```
+
+This file is never tracked — keep it in `~/.secrets/` on each machine separately.
+
 ## Notes
 
 - **Conda paths** in `.zshrc` and `.bash_profile` assume miniforge3 at `$HOME/miniforge3`. On machines without conda, the init block fails silently.
