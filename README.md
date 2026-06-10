@@ -7,6 +7,7 @@ Personal dotfiles for macOS, with portable support for Linux VMs.
 | File | Purpose |
 |---|---|
 | `.zshrc` | Zsh config: oh-my-zsh, plugins, conda init |
+| `.zshrc.cluster` | Minimal Zsh config for cluster nodes (no oh-my-zsh/p10k) |
 | `.zsh/aliases.zsh` | Shell aliases (sourced by `.zshrc`) |
 | `.zprofile` | Login shell: Homebrew path setup (macOS only, guarded) |
 | `.bash_profile` | Bash login shell: conda init |
@@ -22,6 +23,8 @@ Personal dotfiles for macOS, with portable support for Linux VMs.
 - **[Powerlevel10k](https://github.com/romkatv/powerlevel10k)** — prompt theme (requires a [Nerd Font](https://www.nerdfonts.com))
 - **[zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)** — inline history suggestions as you type
 - **[zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)** — fish-like command highlighting
+- **[fzf](https://github.com/junegunn/fzf)** — fuzzy finder; required by fzf-tab
+- **[fzf-tab](https://github.com/Aloxaf/fzf-tab)** — replace zsh's default completion with fzf
 - **[zoxide](https://github.com/ajeetdsouza/zoxide)** — smarter `cd`; use `z <dir>` to jump based on frecency
 - **[git-open](https://github.com/paulirish/git-open)** — open the current repo in the browser
 
@@ -52,6 +55,20 @@ This will:
 ```
 
 Skips Powerlevel10k and git-open. oh-my-zsh, zsh-autosuggestions, zsh-syntax-highlighting, and zoxide are still installed. The prompt falls back to the oh-my-zsh default theme.
+
+### Cluster install (UZH sciencecluster)
+
+No install script — just clone and symlink manually. `install.sh` is not meant for the cluster.
+
+```sh
+git clone https://github.com/hugofluhr/dotfiles.git ~/dotfiles
+ln -sf ~/dotfiles/.zshrc.cluster ~/.zshrc
+ln -sf ~/dotfiles/.zsh ~/.zsh
+ln -sf ~/dotfiles/.gitconfig ~/.gitconfig
+ln -sf ~/dotfiles/.tmux.conf ~/.tmux.conf
+```
+
+`.zshrc.cluster` sources the cluster init scripts (`lmod`, `spack`, `slurm`) and has no dependency on oh-my-zsh, p10k, or fzf.
 
 ### Uninstall
 

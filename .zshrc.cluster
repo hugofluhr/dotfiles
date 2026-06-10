@@ -1,0 +1,39 @@
+# History
+HISTSIZE=5000
+SAVEHIST=5000
+HISTFILE=~/.zsh_history
+setopt histignorealldups sharehistory incappendhistory
+
+# Keybindings
+bindkey -e
+bindkey '^[[A' history-search-backward
+bindkey '^[[B' history-search-forward
+
+# Cluster init scripts
+source /etc/profile.d/lmod.sh
+source /etc/profile.d/spack.sh
+source /etc/profile.d/slurm.sh
+source /etc/profile.d/z01_lmodenv.sh
+
+# Completion
+autoload -Uz compinit && compinit
+
+zstyle ':completion:*' menu select
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' verbose true
+zstyle ':completion:*' matcher-list '' 'm:{a-z}={A-Z}' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=* l:|=*'
+eval "$(dircolors -b)"
+zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
+zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
+
+# Prompt: green bold user@host, cyan truncated path, red exit code on failure
+# Right prompt: timestamp (useful for tracking when commands finish)
+PROMPT='%(?::%F{red}[%?]%f )%B%F{green}%n@%m%f%b:%F{cyan}%(4~|…/%3~|%~)%f
+%# '
+RPROMPT='%F{240}%*%f'
+
+# Aliases
+alias ls='ls --color=auto'
+alias ll='ls -lh --color=auto'
+alias la='ls -lah --color=auto'
