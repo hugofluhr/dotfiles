@@ -160,8 +160,12 @@
     typeset -g POWERLEVEL9K_EMPTY_LINE_RIGHT_PROMPT_FIRST_SEGMENT_START_SYMBOL='%{%}'
   fi
 
-  # Default background color.
-  typeset -g POWERLEVEL9K_BACKGROUND=236
+  # Default background color — orange on Linux (VM), dark gray on macOS.
+  if [[ "$(uname)" == "Darwin" ]]; then
+    typeset -g POWERLEVEL9K_BACKGROUND=236
+  else
+    typeset -g POWERLEVEL9K_BACKGROUND=130
+  fi
 
   # Separator between same-color segments on the left.
   typeset -g POWERLEVEL9K_LEFT_SUBSEGMENT_SEPARATOR='%244F\uE0B1'
