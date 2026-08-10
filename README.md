@@ -32,6 +32,18 @@ Personal dotfiles for macOS, with portable support for Linux VMs.
 
 Configured for true color (`RGB`) and extended key support. Works correctly inside modern terminals (iTerm2, Ghostty, WezTerm).
 
+### Ghostty over SSH
+
+Ghostty sets `TERM=xterm-ghostty`. Remote hosts (clusters, VMs) usually don't have that terminfo entry installed, which causes garbled colors, broken arrow/backspace keys, and general weirdness in `vim`/`less`/`htop`/etc. over SSH.
+
+Fix it per host with the `ghostty-install-terminfo` function (defined in `.zsh/aliases.zsh`):
+
+```sh
+ghostty-install-terminfo <host>
+```
+
+This compiles Ghostty's terminfo entry into `~/.terminfo` on the remote — a per-user operation, no sudo required. On clusters with NFS-shared home directories (e.g. UZH sciencecluster), installing it once from the login node makes it available on compute nodes too.
+
 ## Install
 
 Clone the repo and run the install script:
