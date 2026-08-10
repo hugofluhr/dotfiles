@@ -60,7 +60,9 @@ else
     fi
   fi
   echo "Submitting a new $JOBNAME job..."
-  ssh "$LOGIN_ALIAS" "mkdir -p ~/slurm_jobs ~/logs && cd ~/slurm_jobs && sbatch vscode_tunnel.sbatch"
+  # vscode_tunnel.sbatch lives in the slurm_scripts repo (github.com/hugofluhr/slurm_scripts,
+  # ~/slurm_scripts/vscode/ on the cluster) -- git pull first per the usual convention.
+  ssh "$LOGIN_ALIAS" "mkdir -p ~/logs && cd ~/slurm_scripts && git pull && cd vscode && sbatch vscode_tunnel.sbatch"
 fi
 
 echo -n "Waiting for $JOBNAME to reach RUNNING"
