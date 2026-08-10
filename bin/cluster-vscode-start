@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# Start (or reuse) a VS Code remote-dev tunnel job on UZH sciencecluster
+# and open VS Code against it.
+#
+# Usage: cluster-vscode-start [remote-path]
+#   remote-path defaults to your cluster home (~)
+#
+# See ~/.claude/skills/sciencecluster/references/vscode_remote.md for
+# the full workflow this is part of.
+set -euo pipefail
+
+LOGIN_ALIAS="uzh.cluster.cmd"
+NODE_ALIAS="uzh.cluster.node"
+JOBNAME="vscode_tunnel"
+REMOTE_DIR="${1:-}"
+
+# `code --remote` takes a literal path -- it does not shell-expand "~", so a
+# bare "~" (or "~/sub/dir") gets treated as a folder literally named that and
+# fails with "workspace does not exist". Resolve against the real remote
+# $HOME instead.
+if [ -z "$REMOTE_DIR" ] || [ "${REMOTE_DIR#\~}" != "$REMOTE_DIR" ]; then
+  REMOTE_HOME=$(ssh "$LOGIN_ALIAS" 'echo $HOME')
+  if [ -z "$REMOTE_HOME" ]; then
+    echo "Could not resolve \$HOME on $LOGIN_ALIAS" >&2
+    exit 1
+  fi
+  REMOTE_DIR="${REMOTE_HOME}${REMOTE_DIR#\~}"
+fi
+
+query_state() {
+  ssh "$LOGIN_ALIAS" "squeue --me --name=$JOBNAME -h -O State" | head -1 | tr -d '[:space:]'
+}
+
+state=$(query_state || true)
+
+if [ "$state" = "RUNNING" ]; then
+  echo "$JOBNAME already RUNNING, reusing it."
+elif [ "$state" = "PENDING" ] || [ "$state" = "CONFIGURING" ]; then
+  echo "$JOBNAME found in state $state, waiting for it to start..."
+else
+  # Anything else (COMPLETING/CANCELLED/FAILED/TIMEOUT/... or unset) means
+  # there's no job actively heading toward RUNNING. A job we just scancel'd
+  # (e.g. via cluster-vscode-stop) lingers in COMPLETING for a few seconds
+  # before it drops out of squeue entirely -- wait it out, then submit fresh.
+  if [ -n "$state" ]; then
+    echo "$JOBNAME found in terminal state $state -- waiting for it to clear..."
+    cleared=false
+    for _ in $(seq 1 12); do  # up to 60s
+      sleep 5
+      state=$(query_state)
+      if [ -z "$state" ]; then
+        cleared=true
+        break
+      fi
+    done
+    if [ "$cleared" != true ]; then
+      echo "$JOBNAME still lingering in state $state after 60s." \
+           "Check 'ssh $LOGIN_ALIAS squeue --me' before retrying." >&2
+      exit 1
+    fi
+  fi
+  echo "Submitting a new $JOBNAME job..."
+  ssh "$LOGIN_ALIAS" "mkdir -p ~/slurm_jobs ~/logs && cd ~/slurm_jobs && sbatch vscode_tunnel.sbatch"
+fi
+
+echo -n "Waiting for $JOBNAME to reach RUNNING"
+elapsed=0
+while true; do
+  state=$(query_state)
+  case "$state" in
+    RUNNING) break ;;
+    PENDING|CONFIGURING|"") ;;  # keep waiting; briefly empty right after sbatch is normal
+    *)
+      echo
+      echo "$JOBNAME entered state '$state' instead of RUNNING -- won't recover on" \
+           "its own. Check 'ssh $LOGIN_ALIAS squeue --me' and" \
+           "~/logs/vscode_tunnel_*.txt on the cluster, then rerun this script." >&2
+      exit 1
+      ;;
+  esac
+  echo -n "."
+  sleep 5
+  elapsed=$((elapsed + 5))
+  if [ "$elapsed" -ge 600 ]; then
+    echo
+    echo "Still PENDING after 10 min -- fair-share queue may just be busy." \
+         "Safe to rerun this script to keep waiting, or check" \
+         "'ssh $LOGIN_ALIAS squeue --me'." >&2
+    exit 1
+  fi
+done
+echo " done."
+
+# Small grace period: the job sets its Comment (port) a moment after
+# SLURM reports it RUNNING, so the ProxyCommand's squeue lookup can
+# briefly race an empty Comment right at the state transition.
+sleep 3
+
+echo "Testing connection through $NODE_ALIAS..."
+if ! ssh -o ConnectTimeout=10 "$NODE_ALIAS" true; then
+  echo "Could not connect via $NODE_ALIAS. Check 'ssh -v $NODE_ALIAS' and" \
+       "~/logs/vscode_tunnel_*.txt on the cluster." >&2
+  exit 1
+fi
+
+echo "Opening VS Code..."
+code --remote "ssh-remote+$NODE_ALIAS" "$REMOTE_DIR"

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Cancel the running VS Code tunnel job(s) on UZH sciencecluster.
+set -euo pipefail
+
+LOGIN_ALIAS="uzh.cluster.cmd"
+JOBNAME="vscode_tunnel"
+
+jobs=$(ssh "$LOGIN_ALIAS" "squeue --me --name=$JOBNAME -h -O JobID" || true)
+
+if [ -z "$jobs" ]; then
+  echo "No $JOBNAME job running."
+  exit 0
+fi
+
+echo "Cancelling $JOBNAME job(s):"
+echo "$jobs"
+ssh "$LOGIN_ALIAS" "scancel --me --name=$JOBNAME"
+echo "Done."

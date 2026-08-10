@@ -84,6 +84,7 @@ fi
 
 # --- symlinks ---
 DOTFILES=(
+  bin
   .zsh
   .zshrc
   .zprofile
