@@ -15,6 +15,19 @@ source /etc/profile.d/spack.sh
 source /etc/profile.d/slurm.sh
 source /etc/profile.d/z01_lmodenv.sh
 
+# >>> conda initialize (cluster module) >>>
+# Uses the cluster's admin-maintained miniforge3 module instead of a
+# home-directory install. `module load` alone only puts conda on PATH
+# (CONDA_SHLVL=0); source its conda.sh to get `conda activate` as a
+# shell function too.
+module load miniforge3 &>/dev/null
+if [ -n "$CONDA_EXE" ]; then
+    CONDA_BASE="${CONDA_EXE%/bin/conda}"
+    source "$CONDA_BASE/etc/profile.d/conda.sh"
+    [ -f "$CONDA_BASE/etc/profile.d/mamba.sh" ] && source "$CONDA_BASE/etc/profile.d/mamba.sh"
+fi
+# <<< conda initialize <<<
+
 # Completion
 autoload -Uz compinit && compinit
 

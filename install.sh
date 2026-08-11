@@ -31,16 +31,19 @@ link_dotfiles() {
 }
 
 # --- cluster mode: symlinks only, no package installs, no sudo, no chsh ---
-# Nothing here may require admin rights; login shell is left alone (use
-# `exec zsh` or an ~/.bash_profile hook if the cluster won't let you chsh).
+# Nothing here may require admin rights. `chsh` usually isn't available on
+# the cluster, so the account's login shell stays bash -- .bashrc/.bash_profile
+# carry a guarded `exec zsh -l` instead to hand off interactive sessions.
 if [ "$CLUSTER" = true ]; then
   echo "Cluster mode: symlinks only (no oh-my-zsh, p10k, fzf, zoxide, or sudo)."
   link_dotfiles \
     .zshrc.cluster:.zshrc \
     .zsh \
     .gitconfig \
-    .tmux.conf
-  echo "Done. Run 'exec zsh' to start using it."
+    .tmux.conf \
+    .bashrc \
+    .bash_profile
+  echo "Done. Open a new shell (or run 'exec zsh') to start using it."
   exit 0
 fi
 
@@ -124,6 +127,7 @@ DOTFILES=(
   .zsh
   .zshrc
   .zprofile
+  .bashrc
   .bash_profile
   .gitconfig
   .p10k.zsh
