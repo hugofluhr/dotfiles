@@ -66,21 +66,19 @@ This will:
 ./install.sh --minimal
 ```
 
-Skips Powerlevel10k and git-open. oh-my-zsh, zsh-autosuggestions, zsh-syntax-highlighting, and zoxide are still installed. The prompt falls back to the oh-my-zsh default theme.
+Skips Powerlevel10k and git-open. oh-my-zsh, zsh-autosuggestions, zsh-syntax-highlighting, and zoxide are still installed. The prompt falls back to the oh-my-zsh default theme. Still requires `sudo` — for the cluster use `--cluster` below.
 
 ### Cluster install (UZH sciencecluster)
 
-No install script — just clone and symlink manually. `install.sh` is not meant for the cluster.
-
 ```sh
-git clone https://github.com/hugofluhr/dotfiles.git ~/dotfiles
-ln -sf ~/dotfiles/.zshrc.cluster ~/.zshrc
-ln -sf ~/dotfiles/.zsh ~/.zsh
-ln -sf ~/dotfiles/.gitconfig ~/.gitconfig
-ln -sf ~/dotfiles/.tmux.conf ~/.tmux.conf
+./install.sh --cluster
 ```
 
-`.zshrc.cluster` sources the cluster init scripts (`lmod`, `spack`, `slurm`) and has no dependency on oh-my-zsh, p10k, or fzf.
+Symlinks only — no package installs, no `sudo`, no `chsh`. Use this and **not** `--minimal` on the cluster: `--minimal` is for VMs where you have admin rights, and its `sudo apt-get` / `sudo chsh` steps will fail (and abort the script) without them.
+
+Links `.zshrc.cluster` → `~/.zshrc`, plus `.zsh`, `.gitconfig`, and `.tmux.conf`. `.zshrc.cluster` sources the cluster init scripts (`lmod`, `spack`, `slurm`) and has no dependency on oh-my-zsh, p10k, or fzf.
+
+The login shell is left alone, since `chsh` usually isn't available to unprivileged users on the cluster. Run `exec zsh` after logging in, or add a guarded `exec zsh -l` to your shell profile.
 
 ### Uninstall
 

@@ -3,10 +3,46 @@ set -e
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MINIMAL=false
+CLUSTER=false
 
 for arg in "$@"; do
   [[ "$arg" == "--minimal" ]] && MINIMAL=true
+  [[ "$arg" == "--cluster" ]] && CLUSTER=true
 done
+
+# Symlink helper. Entries are "source" or "source:target" when the name in
+# $HOME differs from the name in the repo.
+link_dotfiles() {
+  echo "Creating symlinks..."
+  for entry in "$@"; do
+    source="$DOTFILES_DIR/${entry%%:*}"
+    target="$HOME/${entry##*:}"
+
+    if [ -L "$target" ]; then
+      rm "$target"
+    elif [ -e "$target" ]; then
+      echo "  Backing up existing $(basename "$target") -> $(basename "$target").bak"
+      mv "$target" "${target}.bak"
+    fi
+
+    ln -s "$source" "$target"
+    echo "  $target -> $source"
+  done
+}
+
+# --- cluster mode: symlinks only, no package installs, no sudo, no chsh ---
+# Nothing here may require admin rights; login shell is left alone (use
+# `exec zsh` or an ~/.bash_profile hook if the cluster won't let you chsh).
+if [ "$CLUSTER" = true ]; then
+  echo "Cluster mode: symlinks only (no oh-my-zsh, p10k, fzf, zoxide, or sudo)."
+  link_dotfiles \
+    .zshrc.cluster:.zshrc \
+    .zsh \
+    .gitconfig \
+    .tmux.conf
+  echo "Done. Run 'exec zsh' to start using it."
+  exit 0
+fi
 
 # --- zsh (Linux only) ---
 if ! command -v zsh &>/dev/null; then
@@ -96,21 +132,7 @@ DOTFILES=(
   .fonts.conf
 )
 
-echo "Creating symlinks..."
-for file in "${DOTFILES[@]}"; do
-  target="$HOME/$file"
-  source="$DOTFILES_DIR/$file"
-
-  if [ -L "$target" ]; then
-    rm "$target"
-  elif [ -e "$target" ]; then
-    echo "  Backing up existing $file -> ${file}.bak"
-    mv "$target" "${target}.bak"
-  fi
-
-  ln -s "$source" "$target"
-  echo "  $target -> $source"
-done
+link_dotfiles "${DOTFILES[@]}"
 
 if [ "$SHELL" != "$(which zsh)" ]; then
   echo "Setting zsh as default shell..."
