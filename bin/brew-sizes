@@ -1,0 +1,85 @@
+#!/usr/bin/env zsh
+# Report disk usage of top-level Homebrew formulae, with their dependencies.
+#
+# Usage: brew-sizes [-n COUNT]
+#   -n COUNT   show only the COUNT largest (default: all)
+#
+# Columns:
+#   TOTAL      formula + every dependency. Deps shared with other formulae are
+#              counted under each one, so this column oversums your actual disk.
+#   EXCLUSIVE  formula + only the deps nothing else needs -- i.e. what you would
+#              really reclaim by uninstalling it.
+#   OWN        just the formula's own Cellar directory.
+#
+# Only covers formulae. Casks live in /Applications, not the Cellar.
+#
+# zsh rather than bash: needs associative arrays, which macOS's bash 3.2 lacks.
+
+emulate -L zsh
+setopt local_options err_exit pipe_fail no_unset no_nomatch
+
+limit=0
+while getopts "n:" opt; do
+  case $opt in
+    n) limit=$OPTARG ;;
+    *) sed -n '2,4p' "$0" >&2; exit 1 ;;
+  esac
+done
+
+command -v brew >/dev/null || { echo "brew not found in PATH" >&2; exit 1 }
+
+typeset -A size deps dependents
+cellar=$(brew --prefix)/Cellar
+
+# --- disk usage per installed formula ---
+while read -r kb dir; do
+  size[${dir:t}]=$kb
+done < <(du -sk $cellar/*(/) 2>/dev/null)
+
+# --- dependency graph (one call), plus reverse edges ---
+while IFS=: read -r name rest; do
+  deps[${name:t}]="$rest"
+  for d in ${=rest}; do
+    dependents[${d:t}]="${dependents[${d:t}]:-} ${name:t}"
+  done
+done < <(brew deps --installed 2>/dev/null)
+
+# --- per leaf: total and exclusive ---
+report() {
+  local leaf l own total excl dn parent shared
+  local -a mydeps
+  local -A owned
+
+  for leaf in $(brew leaves --installed-on-request); do
+    l=${leaf:t}
+    own=${size[$l]:-0}
+    total=$own
+    excl=$own
+    mydeps=(${=deps[$l]:-})
+
+    # everything that belongs to this leaf's own tree
+    owned=()
+    owned[$l]=1
+    for d in $mydeps; do owned[${d:t}]=1; done
+
+    for d in $mydeps; do
+      dn=${d:t}
+      total=$(( total + ${size[$dn]:-0} ))
+      # exclusive only if every installed dependent sits inside that tree
+      shared=0
+      for parent in ${=dependents[$dn]:-}; do
+        [[ -z ${owned[$parent]:-} ]] && { shared=1; break }
+      done
+      (( shared )) || excl=$(( excl + ${size[$dn]:-0} ))
+    done
+
+    printf "%d\t%d\t%d\t%s\n" $total $excl $own $l
+  done
+}
+
+{
+  printf "%-28s %10s %10s %10s\n" FORMULA TOTAL EXCLUSIVE OWN
+  report | sort -rn | {
+    (( limit > 0 )) && head -n $limit || cat
+  } | awk -F'\t' '{ printf "%-28s %9.1fM %9.1fM %9.1fM\n", $4, $1/1024, $2/1024, $3/1024 }'
+}
