@@ -16,6 +16,7 @@ Personal dotfiles for macOS, with portable support for Linux VMs.
 | `.tmux.conf` | Tmux: true color, extended keys, passthrough |
 | `.condarc` | Conda: channel preferences |
 | `.fonts.conf` | Font rendering config |
+| `ghostty/config` | Ghostty config (symlinked to `~/Library/Application Support/com.mitchellh.ghostty/config`) |
 
 ### Zsh setup
 
@@ -31,6 +32,10 @@ Personal dotfiles for macOS, with portable support for Linux VMs.
 ### Tmux
 
 Configured for true color (`RGB`) and extended key support. Works correctly inside modern terminals (iTerm2, Ghostty, WezTerm).
+
+### Ghostty config
+
+`ghostty/config` sets `macos-option-as-alt = true` so Option+Backspace/Arrow word-navigation and word-delete work like they do in iTerm2 (which sends that sequence via a built-in key mapping; Ghostty needs Option explicitly set to act as Alt/Meta).
 
 ### Ghostty over SSH
 

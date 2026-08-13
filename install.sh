@@ -134,6 +134,7 @@ DOTFILES=(
   .tmux.conf
   .condarc
   .fonts.conf
+  "ghostty/config:Library/Application Support/com.mitchellh.ghostty/config"
 )
 
 link_dotfiles "${DOTFILES[@]}"
