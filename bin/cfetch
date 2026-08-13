@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+# cfetch -- interactively pick files on the UZH sciencecluster and rsync them
+# down to this machine.
+#
+# Usage: cfetch [-c] [-r] [-p] [-n] [-H host] <remote-dir> [local-dest]
+#   -c        reuse a cached listing if one exists, else build and save one
+#   -r        rebuild the cached listing (implies -c)
+#   -p        preview the hovered file over ssh (costs a remote call per move)
+#   -n        rsync dry run -- report what would transfer, copy nothing
+#   -H host   ssh host alias (default: uzh.cluster.cmd)
+#
+# Tab marks files, Enter transfers them. Search matches on the path only, so
+# the size column never interferes. Paths are recreated relative to
+# <remote-dir> underneath <local-dest> (default: the current directory).
+#
+# The listing comes from a single `find` over <remote-dir> on the login node --
+# one bounded metadata walk. That is fine for a project subtree and not fine for
+# a whole /shares/<account> root; use `ncdu -o` from a batch job to work out
+# which subtree you want first. Pass -c when you expect to revisit the same
+# tree, so the walk happens once instead of once per invocation.
+set -euo pipefail
+
+HOST="uzh.cluster.cmd"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/cfetch"
+use_cache=0
+refresh=0
+preview=0
+dry_run=0
+
+usage() { sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 1; }
+
+while getopts "crpnH:h" opt; do
+  case $opt in
+    c) use_cache=1 ;;
+    r) use_cache=1; refresh=1 ;;
+    p) preview=1 ;;
+    n) dry_run=1 ;;
+    H) HOST=$OPTARG ;;
+    *) usage ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+[ $# -ge 1 ] || usage
+REMOTE_DIR=${1%/}
+DEST=${2:-.}
+
+command -v fzf >/dev/null || { echo "cfetch: fzf not found in PATH" >&2; exit 1; }
+
+# Resolve <remote-dir> against the *remote* home. A leading "~" reaches us only
+# if it was quoted; unquoted, the local shell has already expanded it to this
+# Mac's $HOME, which is never a path that exists on the cluster. Handle both
+# spellings, plus bare relative paths. Genuine absolute paths (/shares/...)
+# pass through untouched and cost no extra round trip.
+case $REMOTE_DIR in
+  "$HOME"|"$HOME"/*) REMOTE_DIR=${REMOTE_DIR#"$HOME"}; need_home=1 ;;
+  '~'|'~'/*)         REMOTE_DIR=${REMOTE_DIR#\~};      need_home=1 ;;
+  /*)                need_home=0 ;;
+  *)                 REMOTE_DIR="/$REMOTE_DIR";        need_home=1 ;;
+esac
+
+if [ "$need_home" -eq 1 ]; then
+  remote_home=$(ssh "$HOST" 'echo $HOME')
+  [ -n "$remote_home" ] || { echo "cfetch: could not resolve \$HOME on $HOST" >&2; exit 1; }
+  REMOTE_DIR="${remote_home}${REMOTE_DIR}"
+fi
+
+# Wrap a string in single quotes for safe expansion by the remote shell.
+shquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+
+# One line per file: raw byte size, tab, path relative to REMOTE_DIR. Sorted
+# biggest-first remotely so the interesting things are at the top of fzf.
+build_listing() {
+  echo "cfetch: walking $HOST:$REMOTE_DIR ..." >&2
+  ssh "$HOST" "cd $(shquote "$REMOTE_DIR") && find . -type f -printf '%s\t%P\n' | sort -rn"
+}
+
+if [ "$use_cache" -eq 1 ]; then
+  mkdir -p "$CACHE_DIR"
+  key=$(printf '%s%s' "$HOST" "$REMOTE_DIR" | tr -c 'A-Za-z0-9._-' '_')
+  listing="$CACHE_DIR/$key.tsv"
+  if [ "$refresh" -eq 1 ] || [ ! -s "$listing" ]; then
+    build_listing > "$listing"
+    origin="fresh walk, now cached"
+  else
+    age_min=$(( ( $(date +%s) - $(stat -f %m "$listing") ) / 60 ))
+    origin="cached ${age_min}m ago -- cfetch -r to rebuild"
+  fi
+else
+  listing=$(mktemp "${TMPDIR:-/tmp}/cfetch.XXXXXX")
+  trap 'rm -f "$listing"' EXIT
+  build_listing > "$listing"
+  origin="fresh walk"
+fi
+
+[ -s "$listing" ] || { echo "cfetch: no files found under $REMOTE_DIR" >&2; exit 1; }
+
+# Human-readable sizes are rendered here rather than with remote numfmt, which
+# rewrites the tab delimiter the path column depends on.
+human=$(awk -F'\t' 'BEGIN { OFS = "\t" }
+  {
+    s = $1; u = "B"
+    if      (s >= 1073741824) { s /= 1073741824; u = "G" }
+    else if (s >= 1048576)    { s /= 1048576;    u = "M" }
+    else if (s >= 1024)       { s /= 1024;       u = "K" }
+    printf "%6.1f%s\t%s\n", s, u, $2
+  }' "$listing")
+
+fzf_args=(
+  --multi --height=80% --reverse
+  --delimiter=$'\t' --nth=2..
+  --bind 'ctrl-a:select-all,ctrl-d:deselect-all'
+  --header "$REMOTE_DIR on $HOST -- $(wc -l < "$listing" | tr -d ' ') files, $origin
+Tab marks, Enter transfers to $DEST"
+)
+
+if [ "$preview" -eq 1 ]; then
+  fzf_args+=(
+    --preview "ssh $HOST 'head -c 4000 $(shquote "$REMOTE_DIR")/{2}' 2>/dev/null"
+    --preview-window 'right:50%:wrap'
+  )
+fi
+
+selection=$(printf '%s\n' "$human" | fzf "${fzf_args[@]}") || true
+[ -n "$selection" ] || { echo "cfetch: nothing selected, no files transferred." >&2; exit 0; }
+
+mkdir -p "$DEST"
+
+rsync_args=(-avhP --files-from=- "$HOST:$REMOTE_DIR/" "$DEST/")
+[ "$dry_run" -eq 1 ] && rsync_args=(-n "${rsync_args[@]}")
+
+# --files-from implies --relative, so the tree under REMOTE_DIR is recreated
+# under DEST rather than every file landing flat in one directory.
+printf '%s\n' "$selection" | cut -f2- | rsync "${rsync_args[@]}"
