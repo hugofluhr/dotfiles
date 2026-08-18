@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# tmux-proj -- launch (or reattach to) a per-project tmux session with a
+# fixed 3-pane layout: a local shell, a `claude` session, and an ssh
+# connection to the project's analog directory on the cluster.
+#
+# Usage: tmux-proj [-c config] [name]
+#   -c config   path to the project config file
+#               (default: ~/.config/tmux-proj/projects.conf)
+#
+# With no name, projects are listed via fzf. Config file format, one
+# project per line, pipe-delimited, blank/`#` lines ignored:
+#
+#   name|local_path|remote_host|remote_path
+#
+# remote_host may be left empty to fall back to the default below.
+# Example:
+#
+#   myproj|~/code/myproj|uzh.cluster.cmd|/shares/group/hfluhr/myproj
+#   otherproj|~/code/otherproj||/shares/group/hfluhr/other
+#
+# This file lives outside the dotfiles repo (like ~/.secrets/env.sh) since
+# project paths are machine-specific, not something to track/share.
+#
+# If a session with this name already exists, tmux-proj just attaches --
+# it never rebuilds the layout of a running session.
+set -euo pipefail
+
+DEFAULT_REMOTE_HOST="uzh.cluster.cmd"
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-proj/projects.conf"
+
+usage() { sed -n '2,${/^#/!q;s/^# \{0,1\}//;p;}' "$0" >&2; exit 1; }
+
+while getopts "c:h" opt; do
+  case $opt in
+    c) CONFIG=$OPTARG ;;
+    *) usage ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+[ -f "$CONFIG" ] || { echo "tmux-proj: no config file at $CONFIG" >&2; exit 1; }
+
+# Strip comments/blanks once so both the fzf list and the lookup below see
+# the same clean set of lines.
+entries() { grep -vE '^\s*(#|$)' "$CONFIG"; }
+
+name=${1:-}
+if [ -z "$name" ]; then
+  command -v fzf >/dev/null || { echo "tmux-proj: pass a project name, or install fzf to pick one" >&2; exit 1; }
+  name=$(entries | cut -d'|' -f1 | fzf --prompt="project> ") || exit 1
+fi
+[ -n "$name" ] || exit 1
+
+# Already running? Just attach/switch -- never touch an existing session's
+# layout, since the user may have rearranged it.
+if tmux has-session -t "$name" 2>/dev/null; then
+  if [ -n "${TMUX:-}" ]; then
+    tmux switch-client -t "$name"
+  else
+    tmux attach -t "$name"
+  fi
+  exit 0
+fi
+
+line=$(entries | awk -F'|' -v n="$name" '$1 == n { print; found=1 } END { if (!found) exit 1 }') \
+  || { echo "tmux-proj: no project '$name' in $CONFIG" >&2; exit 1; }
+
+IFS='|' read -r _ local_path remote_host remote_path <<<"$line"
+local_path=${local_path/#\~/$HOME}
+remote_host=${remote_host:-$DEFAULT_REMOTE_HOST}
+[ -d "$local_path" ] || { echo "tmux-proj: local path '$local_path' does not exist" >&2; exit 1; }
+
+# Wrap a string in single quotes for safe expansion by the remote shell.
+shquote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+
+# Layout: left pane a plain shell, right column split into claude (top)
+# and the cluster ssh session (bottom).
+tmux new-session -d -s "$name" -c "$local_path"
+
+# Target every pane by its unique pane_id (%N), not by window/pane index --
+# base-index/pane-base-index in .tmux.conf can shift those, pane_id can't.
+left=$(tmux display-message -p -t "$name" '#{pane_id}')
+top_right=$(tmux split-window -h -P -F '#{pane_id}' -t "$left" -c "$local_path")
+bottom_right=$(tmux split-window -v -P -F '#{pane_id}' -t "$top_right" -c "$local_path")
+tmux send-keys -t "$top_right" "claude" C-m
+
+# Build the remote command (cd + login shell) as one opaque string, then
+# shquote it a second time so the *local* pane's shell passes it to ssh
+# as a single argument, untouched. Escaping \$SHELL keeps it literal here
+# so the remote shell -- not this one -- is the one that expands it.
+# TMUX_SESSION is scoped to just the exec'd shell, so if the cluster has
+# tmux-autostart opted in (~/.tmux_autostart), it lands in/creates a
+# remote session named after this project -- surviving ssh drops even
+# when this local pane's connection itself doesn't.
+remote_cmd="cd $(shquote "$remote_path") && TMUX_SESSION=$(shquote "$name") exec \$SHELL -l"
+tmux send-keys -t "$bottom_right" "ssh -t $remote_host $(shquote "$remote_cmd")" C-m
+tmux select-pane -t "$left"
+
+if [ -n "${TMUX:-}" ]; then
+  tmux switch-client -t "$name"
+else
+  tmux attach -t "$name"
+fi

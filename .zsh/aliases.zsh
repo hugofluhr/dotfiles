@@ -2,6 +2,8 @@
 
 export GITHUB_USERNAME=hugofluhr
 
+alias tm=tmux-proj
+
 # Install Ghostty's terminfo entry on a remote host (per-user, no sudo needed;
 # writes to ~/.terminfo on the remote, which ncurses checks automatically).
 # Fixes garbled colors / broken keys when SSHing from Ghostty into hosts that
