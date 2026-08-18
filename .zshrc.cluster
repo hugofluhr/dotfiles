@@ -50,3 +50,7 @@ RPROMPT='%F{240}%*%f'
 alias ls='ls --color=auto'
 alias ll='ls -lh --color=auto'
 alias la='ls -lah --color=auto'
+
+# Auto-attach to a persistent tmux session on interactive SSH logins.
+# Opt in with: touch ~/.tmux_autostart
+[[ -f ~/.zsh/tmux_autostart.zsh ]] && source ~/.zsh/tmux_autostart.zsh
