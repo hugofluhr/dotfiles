@@ -42,12 +42,6 @@
 
 window-inherit-working-directory = false
 
-# macOS sends Option+key as an alt-charset composed character by default
-# (e.g. for accents), not as an Alt/Meta-modified keypress. Without this,
-# shell/readline bindings like Option+Backspace (delete word) don't work,
-# unlike iTerm2 which sends that sequence via a built-in key mapping.
-macos-option-as-alt = true
-
 # same as iterm and linux default
 quit-after-last-window-closed=true
 

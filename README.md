@@ -35,7 +35,9 @@ Configured for true color (`RGB`) and extended key support. Works correctly insi
 
 ### Ghostty config
 
-`ghostty/config` sets `macos-option-as-alt = true` so Option+Backspace/Arrow word-navigation and word-delete work like they do in iTerm2 (which sends that sequence via a built-in key mapping; Ghostty needs Option explicitly set to act as Alt/Meta).
+Option+Left/Right (word navigation) works out of the box via Ghostty's built-in `alt+arrow_left`/`alt+arrow_right` keybinds (sends `esc:b`/`esc:f`, matching zsh's default emacs bindings) -- no config needed.
+
+`macos-option-as-alt` is deliberately **not** set. It would also enable Option+Backspace for word-delete, but on a Swiss keyboard layout Option is how macOS composes `~`, `@`, `|`, `{`, `}`, `[`, `]`, etc., and this setting breaks that composition entirely (tested: `true` sends every Option combo as Alt/Meta, garbling those characters). Use `Ctrl+W` for word-delete instead -- it's unaffected by any of this.
 
 ### Ghostty over SSH
 
