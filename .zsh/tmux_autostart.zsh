@@ -27,4 +27,10 @@
 [[ -z "$VSCODE_INJECTION" && "$TERM_PROGRAM" != vscode ]] || return 0
 command -v tmux >/dev/null       || return 0
 
-exec tmux new-session -A -s "${TMUX_SESSION:-main}"
+# Deliberately not `exec` -- that would replace this login shell with the
+# tmux client, so detaching (Ctrl-b d) would have nothing to return to and
+# would kill the SSH connection along with it. Running it as a plain
+# foreground command means detach drops you back into this same shell
+# (connection stays open, session keeps running); `exit`/Ctrl-D from there
+# closes the connection when you actually mean to.
+tmux new-session -A -s "${TMUX_SESSION:-main}"
