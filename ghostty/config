@@ -47,3 +47,8 @@ window-inherit-working-directory = false
 # shell/readline bindings like Option+Backspace (delete word) don't work,
 # unlike iTerm2 which sends that sequence via a built-in key mapping.
 macos-option-as-alt = true
+
+# same as iterm and linux default
+quit-after-last-window-closed=true
+
+macos-icon=official
