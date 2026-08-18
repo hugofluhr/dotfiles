@@ -43,6 +43,6 @@
 window-inherit-working-directory = false
 
 # same as iterm and linux default
-quit-after-last-window-closed=true
+# quit-after-last-window-closed=true
 
 macos-icon=official
