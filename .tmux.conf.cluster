@@ -1,0 +1,51 @@
+# Minimal tmux config for the UZH sciencecluster (and anywhere else without
+# a guaranteed truecolor terminal or Nerd Font on the connecting client).
+# See .tmux.conf for the full Ghostty/macOS version -- this intentionally
+# doesn't share code with it, same split as .zshrc vs .zshrc.cluster.
+#
+# What's dropped and why:
+#   - No truecolor hex backgrounds. The cluster's terminfo entries report
+#     256 colors but no Tc/RGB capability, and the SSH client on the other
+#     end isn't guaranteed to be Ghostty (or to share its background color),
+#     so a hardcoded bg would just as likely clash as match.
+#   - No Nerd Font powerline glyphs. Can't assume the connecting terminal
+#     has one patched in. Plain ASCII brackets instead.
+#   - Bar background left unset (inherits the terminal's own), so it never
+#     looks like a mismatched rectangle.
+
+set -g default-terminal "tmux-256color"
+
+# Prefix: Ctrl-Space, same as the main config.
+unbind C-b
+set -g prefix C-Space
+bind C-Space send-prefix
+
+set -g mouse on
+set -g base-index 1
+setw -g pane-base-index 1
+set -g history-limit 50000
+set -sg escape-time 10
+
+# Split keys: - and . sit next to each other, no AltGr needed on Swiss layout
+bind - split-window -v -c "#{pane_current_path}"
+bind . split-window -h -c "#{pane_current_path}"
+bind c new-window -c "#{pane_current_path}"
+
+# Status bar -- plain 256-color accents, no bg block, no glyphs.
+set -g status-interval 5
+set -g status-justify left
+set -g status-style "fg=colour255"
+
+set -g status-left-length 30
+set -g status-left "#[fg=colour97,bold] #S "
+
+setw -g window-status-format " #I:#W "
+setw -g window-status-current-format "#[fg=colour67,bold] [#I:#W] "
+setw -g window-status-separator ""
+
+set -g status-right-length 40
+set -g status-right "#[fg=colour245]%d %b  #[fg=colour71]%H:%M "
+
+set -g pane-border-style "fg=colour238"
+set -g pane-active-border-style "fg=colour67"
+set -g message-style "fg=colour67,bold"

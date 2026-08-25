@@ -40,7 +40,7 @@ if [ "$CLUSTER" = true ]; then
     .zshrc.cluster:.zshrc \
     .zsh \
     .gitconfig \
-    .tmux.conf \
+    .tmux.conf.cluster:.tmux.conf \
     .bashrc \
     .bash_profile
   echo "Done. Open a new shell (or run 'exec zsh') to start using it."
