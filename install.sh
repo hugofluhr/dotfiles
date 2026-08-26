@@ -43,6 +43,15 @@ if [ "$CLUSTER" = true ]; then
     .tmux.conf.cluster:.tmux.conf \
     .bashrc \
     .bash_profile
+
+  # zsh-autosuggestions: single-file plugin, no framework/sudo needed.
+  # Cloned outside the dotfiles repo so it isn't tracked or symlinked.
+  ZSH_AUTOSUGGEST_DIR="$HOME/.zsh-plugins/zsh-autosuggestions"
+  if [ ! -d "$ZSH_AUTOSUGGEST_DIR" ]; then
+    echo "Installing zsh-autosuggestions..."
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$ZSH_AUTOSUGGEST_DIR"
+  fi
+
   echo "Done. Open a new shell (or run 'exec zsh') to start using it."
   exit 0
 fi

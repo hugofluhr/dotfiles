@@ -35,10 +35,24 @@ zstyle ':completion:*' menu select
 zstyle ':completion:*' group-name ''
 zstyle ':completion:*' verbose true
 zstyle ':completion:*' matcher-list '' 'm:{a-z}={A-Z}' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=* l:|=*'
+# Typo-tolerant fallback: exact match first, then case-insensitive, then fuzzy.
+zstyle ':completion:*' completer _complete _match _approximate
 eval "$(dircolors -b)"
 zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
 zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
+
+# zsh-autosuggestions: fish-style inline suggestion from history, accept with →.
+# Single-file plugin, no framework needed -- cloned by install.sh --cluster
+# into ~/.zsh-plugins (kept outside the dotfiles repo's .zsh/ symlink).
+[[ -f ~/.zsh-plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && \
+    source ~/.zsh-plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# fzf key-bindings only (Ctrl-R history, Ctrl-T/Alt-C fuzzy file/dir insert).
+# Deliberately skips completion.zsh: fzf's `**<Tab>` trigger completion is
+# opt-in syntax you have to remember, not real autocomplete -- not worth it.
+[[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && \
+    source /usr/share/doc/fzf/examples/key-bindings.zsh
 
 # Prompt: green bold user@host, cyan truncated path, red exit code on failure
 # Right prompt: timestamp (useful for tracking when commands finish)
