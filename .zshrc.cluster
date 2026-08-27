@@ -9,6 +9,22 @@ bindkey -e
 bindkey '^[[A' history-search-backward
 bindkey '^[[B' history-search-forward
 
+# Keep forwarded ssh-agent working across tmux reattaches.
+#
+# tmux panes capture SSH_AUTH_SOCK from the environment at the moment
+# they're created and never update it. Each fresh SSH login hands out a
+# new agent socket (/tmp/ssh-XXXX/agent.NNNN), so panes created under an
+# earlier connection end up pointing at a socket that's gone -- `git
+# pull` then fails with "Could not open a connection to your
+# authentication agent." Route through one fixed path instead: relink it
+# to the live socket on every login (outside tmux only), and every pane
+# -- old or new -- just resolves the same stable path each time it's used.
+if [[ -n "$SSH_CONNECTION" && -z "$TMUX" && -n "$SSH_AUTH_SOCK" && -S "$SSH_AUTH_SOCK" ]]; then
+    mkdir -p ~/.ssh
+    ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock.tmux
+fi
+[[ -S ~/.ssh/ssh_auth_sock.tmux ]] && export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock.tmux
+
 # Cluster init scripts
 source /etc/profile.d/lmod.sh
 source /etc/profile.d/spack.sh
