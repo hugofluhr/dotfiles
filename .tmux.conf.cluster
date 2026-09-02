@@ -26,6 +26,16 @@ setw -g pane-base-index 1
 set -g history-limit 50000
 set -sg escape-time 10
 
+# Mouse/copy-mode selections normally only land in tmux's own paste buffer,
+# which is why prefix+] works but pasting into another app on the Mac
+# doesn't -- tmux runs on the cluster and has no access to the local
+# clipboard. set-clipboard + the Ms terminal capability make tmux emit an
+# OSC 52 escape sequence on copy, which the local terminal (Ghostty) picks
+# up and writes to the real system clipboard. `*` since the connecting
+# terminal isn't guaranteed, same reasoning as the color/font notes above.
+set -g set-clipboard on
+set -as terminal-overrides ',*:Ms=\E]52;c;%p2%s\007'
+
 # Split keys: - and . sit next to each other, no AltGr needed on Swiss layout
 bind - split-window -v -c "#{pane_current_path}"
 bind . split-window -h -c "#{pane_current_path}"
