@@ -15,7 +15,11 @@ export ZSH="$HOME/.oh-my-zsh"
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="powerlevel10k/powerlevel10k" # set by `omz`
+if [[ -d "${ZSH_CUSTOM:-$ZSH/custom}/themes/powerlevel10k" ]]; then
+  ZSH_THEME="powerlevel10k/powerlevel10k" # set by `omz`
+else
+  ZSH_THEME="robbyrussell" # p10k not installed (--minimal); fall back to omz default
+fi
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -77,7 +81,8 @@ COMPLETION_WAITING_DOTS="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(fzf-tab git git-open zsh-autosuggestions zsh-syntax-highlighting)
+plugins=(fzf-tab git zsh-autosuggestions zsh-syntax-highlighting)
+[[ -d "${ZSH_CUSTOM:-$ZSH/custom}/plugins/git-open" ]] && plugins+=(git-open)
 
 source $ZSH/oh-my-zsh.sh
 
