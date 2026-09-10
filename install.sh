@@ -143,8 +143,11 @@ DOTFILES=(
   .tmux.conf
   .condarc
   .fonts.conf
-  "ghostty/config:Library/Application Support/com.mitchellh.ghostty/config"
 )
+
+if [ "$(uname)" = "Darwin" ]; then
+  DOTFILES+=("ghostty/config:Library/Application Support/com.mitchellh.ghostty/config")
+fi
 
 link_dotfiles "${DOTFILES[@]}"
 
