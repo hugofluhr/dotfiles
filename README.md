@@ -61,6 +61,8 @@ cd ~/dotfiles
 ./install.sh
 ```
 
+Use this full install on macOS and on any persistent cloud VM.
+
 This will:
 1. Install oh-my-zsh (if not already present)
 2. Clone zsh-autosuggestions, zsh-syntax-highlighting, Powerlevel10k, and git-open into oh-my-zsh custom directories
